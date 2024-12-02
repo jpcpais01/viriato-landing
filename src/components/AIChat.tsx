@@ -31,22 +31,6 @@ export function AIChat({ isOpen = false, onClose }: AIChatProps) {
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (chatContainerRef.current && !chatContainerRef.current.contains(event.target as Node)) {
-        onClose?.();
-      }
-    }
-
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen, onClose]);
-
   const sendMessage = async () => {
     if (!inputMessage.trim()) return;
 
