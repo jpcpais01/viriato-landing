@@ -1,0 +1,198 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: #ffffff;
+    --background-secondary: #fafafa;
+    --foreground: #18181b;
+    --foreground-secondary: #71717a;
+    --border: #e4e4e7;
+    --primary: #06b6d4;
+    --primary-hover: #0891b2;
+    --chat-user: #e0f2fe;
+    --chat-assistant: #f0fdf4;
+  }
+
+  .dark {
+    --background: #18181b;
+    --background-secondary: #27272a;
+    --foreground: #fafafa;
+    --foreground-secondary: #a1a1aa;
+    --border: #3f3f46;
+    --primary: #22d3ee;
+    --primary-hover: #06b6d4;
+    --chat-user: #164e63;
+    --chat-assistant: #14532d;
+  }
+}
+
+@layer utilities {
+  .bg-background {
+    background-color: var(--background);
+  }
+
+  .bg-background-secondary {
+    background-color: var(--background-secondary);
+  }
+
+  .text-foreground {
+    color: var(--foreground);
+  }
+
+  .text-foreground-secondary {
+    color: var(--foreground-secondary);
+  }
+
+  .border-border {
+    border-color: var(--border);
+  }
+
+  .chat-message-user {
+    background-color: var(--chat-user);
+    border-radius: 1rem;
+    padding: 1rem;
+  }
+
+  .chat-message-assistant {
+    background-color: var(--chat-assistant);
+    border-radius: 1rem;
+    padding: 1rem;
+  }
+
+  .chat-input {
+    background-color: var(--background-secondary);
+    border: 1px solid var(--border);
+    color: var(--foreground);
+  }
+
+  .chat-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    ring-color: var(--primary);
+  }
+}
+
+* {
+  @apply border-border;
+}
+
+body {
+  @apply bg-background text-foreground;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+
+.gradient-bg {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(
+    135deg,
+    rgba(6, 182, 212, 0.05) 0%,
+    rgba(59, 130, 246, 0.05) 100%
+  );
+}
+
+.gradient-bg::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at center,
+    rgba(6, 182, 212, 0.15) 0%,
+    rgba(59, 130, 246, 0.15) 25%,
+    rgba(6, 182, 212, 0.15) 50%,
+    rgba(59, 130, 246, 0.15) 75%,
+    rgba(6, 182, 212, 0.15) 100%
+  );
+  animation: rotate 20s linear infinite;
+  z-index: -2;
+}
+
+.gradient-bg::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(
+    circle at center,
+    rgba(59, 130, 246, 0.1) 0%,
+    rgba(6, 182, 212, 0.1) 25%,
+    rgba(59, 130, 246, 0.1) 50%,
+    rgba(6, 182, 212, 0.1) 75%,
+    rgba(59, 130, 246, 0.1) 100%
+  );
+  animation: rotate 30s linear infinite reverse;
+  z-index: -1;
+}
+
+/* Blob animations */
+.blob {
+  position: absolute;
+  filter: blur(40px);
+  opacity: 0.7;
+  z-index: -1;
+  mix-blend-mode: plus-lighter;
+}
+
+.blob-1 {
+  top: 0;
+  left: 0;
+  width: 500px;
+  height: 500px;
+  background: radial-gradient(circle at center, rgba(6, 182, 212, 0.1), transparent 70%);
+  animation: blob1 15s infinite;
+}
+
+.blob-2 {
+  bottom: 0;
+  right: 0;
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle at center, rgba(59, 130, 246, 0.1), transparent 70%);
+  animation: blob2 20s infinite;
+}
+
+@keyframes rotate {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes blob1 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  25% {
+    transform: translate(5%, 10%) scale(1.1);
+  }
+  50% {
+    transform: translate(10%, -5%) scale(0.9);
+  }
+  75% {
+    transform: translate(-5%, 5%) scale(1.05);
+  }
+}
+
+@keyframes blob2 {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-8%, -5%) scale(1.1);
+  }
+  66% {
+    transform: translate(5%, -10%) scale(0.9);
+  }
+}
