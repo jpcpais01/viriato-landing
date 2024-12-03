@@ -135,7 +135,7 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
   }, [messages]);
 
   return (
-    <div className={`fixed inset-0 bg-background/80 backdrop-blur-sm z-[100] flex items-center justify-center sm:p-6 ${isOpen ? 'block' : 'hidden'}`}>
+    <div className={`fixed inset-0 sm:bg-background/80 bg-background sm:backdrop-blur-sm z-[100] flex items-center justify-center sm:p-6 ${isOpen ? 'block' : 'hidden'}`}>
       <div className="bg-background sm:rounded-2xl shadow-lg w-full h-full sm:max-w-[85%] md:max-w-[75%] lg:max-w-[60%] sm:h-[80vh] flex flex-col border-border sm:border overflow-hidden">
         {/* Header */}
         <div className="bg-background p-3 sm:p-4 flex justify-between items-center border-b border-border shrink-0">
