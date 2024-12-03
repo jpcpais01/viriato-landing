@@ -10,9 +10,11 @@
   },
   "dependencies": {
     "@radix-ui/react-dropdown-menu": "^2.1.2",
+    "@radix-ui/react-scroll-area": "^1.2.1",
     "@radix-ui/react-slot": "^1.1.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "date-fns": "^4.1.0",
     "dotenv": "^16.4.5",
     "groq-sdk": "^0.3.0",
     "lucide-react": "^0.462.0",
@@ -31,7 +33,9 @@
     "eslint": "^8.53.0",
     "eslint-config-next": "^14.0.0",
     "postcss": "^8.4.49",
+    "tailwind-scrollbar": "^3.1.0",
     "tailwindcss": "^3.4.15",
+    "tailwindcss-animated": "^1.1.2",
     "typescript": "^5.2.2"
   }
 }

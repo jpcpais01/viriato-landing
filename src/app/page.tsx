@@ -4,9 +4,10 @@ import { Button } from "@/components/ui/button"
 import { useChatContext } from "@/context/chat-context"
 import { ModeToggle } from "@/components/mode-toggle"
 import { MessageCircle, ArrowRight } from "lucide-react"
+import { AIChat } from "@/components/AIChat"
 
 export default function Home() {
-  const { setIsChatOpen } = useChatContext();
+  const { isChatOpen, setIsChatOpen } = useChatContext();
 
   return (
     <main className="min-h-screen flex flex-col items-center justify-center p-6 gradient-bg">
@@ -46,6 +47,10 @@ export default function Home() {
           2024 virIAto. All rights reserved.
         </p>
       </div>
+
+      {isChatOpen && (
+        <AIChat isOpen={isChatOpen} onClose={() => setIsChatOpen(false)} />
+      )}
     </main>
   );
 }
