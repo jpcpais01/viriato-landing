@@ -8,7 +8,7 @@ import { useChatContext, Message } from '@/context/chat-context';
 import { ChatHistory } from './ChatHistory';
 import { ScrollArea } from './ui/scroll-area';
 
-type ChatMode = 'fast' | 'default' | 'full';
+type ChatMode = 'fast' | 'default' | 'full' | 'friend';
 
 interface AIChatProps {
   isOpen: boolean;
@@ -140,7 +140,10 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
         {/* Header */}
         <div className="bg-background p-3 sm:p-4 flex justify-between items-center border-b border-border shrink-0">
           <div className="flex items-center gap-2 sm:gap-4">
-            <h2 className="text-base sm:text-lg font-medium text-foreground flex items-center">
+            <h2 
+              className="text-base sm:text-lg font-medium text-foreground flex items-center cursor-pointer hover:text-primary transition-colors"
+              onClick={onClose}
+            >
               <MessageCircle className="mr-1 sm:mr-2 text-primary h-4 w-4 sm:h-5 sm:w-5" /> 
               Chat
             </h2>
@@ -192,6 +195,18 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
               >
                 <BookOpen className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                 <span className="hidden sm:inline">Full</span>
+              </Button>
+              <Button
+                variant={mode === 'friend' ? 'default' : 'ghost'}
+                size="sm"
+                onClick={() => setMode('friend')}
+                className={`flex items-center gap-0.5 sm:gap-1 px-1.5 sm:px-2 py-1 text-xs sm:text-sm transition-colors ${
+                  mode === 'friend' ? 'bg-primary/10 text-primary hover:bg-primary/20' : 'hover:bg-background-secondary'
+                }`}
+                title="Friend mode - Friendly, casual responses"
+              >
+                <MessageCircle className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
+                <span className="hidden sm:inline">Friend</span>
               </Button>
             </div>
             <Button
