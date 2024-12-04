@@ -126,11 +126,41 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
     }
   }, []);
 
-  // Scroll to bottom when messages change
+  // Scroll to position last user message at top when possible
   useEffect(() => {
-    const chatContainer = document.querySelector('.chat-messages');
-    if (chatContainer) {
-      chatContainer.scrollTop = chatContainer.scrollHeight;
+    const scrollContainer = document.querySelector('.chat-messages');
+    const messageElements = Array.from(document.querySelectorAll('.message-container'));
+    
+    if (scrollContainer && messageElements.length > 0) {
+      // Find the index of the last user message in the messages array
+      const lastUserMessageIndex = messages.map(msg => msg.role).lastIndexOf('user');
+      
+      if (lastUserMessageIndex !== -1) {
+        // Find the corresponding DOM element
+        const lastUserMessage = messageElements[lastUserMessageIndex];
+        
+        if (lastUserMessage) {
+          const containerHeight = scrollContainer.clientHeight;
+          const contentHeight = scrollContainer.scrollHeight;
+          const lastUserMessageTop = lastUserMessage.getBoundingClientRect().top - scrollContainer.getBoundingClientRect().top;
+          
+          // Only apply special scrolling if there's enough content and it's not the first message
+          if (contentHeight > containerHeight * 1.5 && lastUserMessageIndex > 0) {
+            // Add a small delay to ensure the DOM has updated
+            setTimeout(() => {
+              // Calculate scroll position to put last user message at top with some padding
+              const scrollPosition = Math.max(0, lastUserMessageTop + scrollContainer.scrollTop - 20);
+              scrollContainer.scrollTop = scrollPosition;
+            }, 0);
+          } else {
+            // If not enough content or it's the first message, scroll to bottom
+            scrollContainer.scrollTop = contentHeight;
+          }
+        }
+      } else {
+        // If no user messages, scroll to bottom
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+      }
     }
   }, [messages]);
 
@@ -243,12 +273,12 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
             
             <div className="flex-1 flex flex-col min-h-0">
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch]">
+              <div className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch] chat-messages">
                 <div className="p-4 space-y-4">
                   {messages.map((message, index) => (
                     <div 
                       key={index}
-                      className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      className={`message-container ${message.role === 'user' ? 'user-message' : 'assistant-message'} flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
                         className={`max-w-[85%] p-3 rounded-lg ${
