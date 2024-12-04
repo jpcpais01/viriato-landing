@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { getChatSessions, saveChatSession, deleteChatSession, clearChatHistory } from '../lib/chatStorage';
 
 export interface Message {
@@ -37,7 +37,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     setSessions(loadedSessions);
   }, []);
 
-  const saveCurrentSession = () => {
+  const saveCurrentSession = useCallback(() => {
     if (messages.length === 0 || !messages.some(m => m.role === 'user')) return;
     
     const sessionId = saveChatSession(messages, activeSessionId);
@@ -46,17 +46,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     // Refresh sessions list
     const updatedSessions = getChatSessions();
     setSessions(updatedSessions);
-  };
+  }, [messages, activeSessionId]);
 
-  const loadSession = (id: string) => {
+  const loadSession = useCallback((id: string) => {
     const session = sessions.find(s => s.id === id);
     if (session) {
       setMessages(session.messages);
       setActiveSessionId(id);
     }
-  };
+  }, [sessions]);
 
-  const deleteSession = (id: string) => {
+  const deleteSession = useCallback((id: string) => {
     deleteChatSession(id);
     if (id === activeSessionId) {
       setMessages([]);
@@ -65,32 +65,41 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     // Refresh sessions list
     const updatedSessions = getChatSessions();
     setSessions(updatedSessions);
-  };
+  }, [activeSessionId]);
 
-  const clearHistory = () => {
+  const clearHistory = useCallback(() => {
     clearChatHistory();
     setMessages([]);
     setActiveSessionId(null);
     setSessions([]);
-  };
+  }, []);
+
+  const contextValue = useMemo(() => ({ 
+    isChatOpen, 
+    setIsChatOpen, 
+    messages, 
+    setMessages,
+    sessions,
+    setSessions,
+    activeSessionId,
+    setActiveSessionId,
+    saveCurrentSession,
+    loadSession,
+    deleteSession,
+    clearHistory
+  }), [
+    isChatOpen, 
+    messages, 
+    sessions, 
+    activeSessionId, 
+    saveCurrentSession,
+    loadSession,
+    deleteSession,
+    clearHistory
+  ]);
 
   return (
-    <ChatContext.Provider 
-      value={{ 
-        isChatOpen, 
-        setIsChatOpen, 
-        messages, 
-        setMessages,
-        sessions,
-        setSessions,
-        activeSessionId,
-        setActiveSessionId,
-        saveCurrentSession,
-        loadSession,
-        deleteSession,
-        clearHistory
-      }}
-    >
+    <ChatContext.Provider value={contextValue}>
       {children}
     </ChatContext.Provider>
   );

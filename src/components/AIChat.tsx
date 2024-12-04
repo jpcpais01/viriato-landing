@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { Button } from './ui/button';
 import { X, Send, MessageCircle, Clock, Zap, Sparkles, BookOpen } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
@@ -22,30 +22,6 @@ const formatMessage = (content: string): string => {
     .trim();
 };
 
-// Markdown components
-const markdownComponents = {
-  p: ({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
-    <p {...props} className="text-xs sm:text-sm leading-relaxed">{children}</p>
-  ),
-  ul: ({ children, ...props }: React.HTMLAttributes<HTMLUListElement>) => (
-    <ul {...props} className="list-disc ml-3 sm:ml-4 my-1.5 sm:my-2 text-xs sm:text-sm">{children}</ul>
-  ),
-  ol: ({ children, ...props }: React.HTMLAttributes<HTMLOListElement>) => (
-    <ol {...props} className="list-decimal ml-3 sm:ml-4 my-1.5 sm:my-2 text-xs sm:text-sm">{children}</ol>
-  ),
-  li: ({ children, ...props }: React.HTMLAttributes<HTMLLIElement>) => (
-    <li {...props} className="mb-0.5 sm:mb-1">{children}</li>
-  ),
-  code: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => (
-    <code {...props} className="bg-muted px-1 py-0.5 rounded text-xs sm:text-sm">{children}</code>
-  ),
-  pre: ({ children, ...props }: React.HTMLAttributes<HTMLPreElement>) => (
-    <pre {...props} className="bg-muted p-2 rounded-md overflow-x-auto">
-      {children}
-    </pre>
-  ),
-};
-
 export function AIChat({ isOpen, onClose }: AIChatProps) {
   const { messages, setMessages, saveCurrentSession, setActiveSessionId } = useChatContext();
   const [input, setInput] = useState('');
@@ -53,8 +29,35 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
   const [mode, setMode] = useState<ChatMode>('default');
   const [showHistory, setShowHistory] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const lastUserMessageRef = useRef<HTMLDivElement>(null);
 
-  const sendMessage = async () => {
+  // Memoize markdown components to prevent unnecessary re-renders
+  const memoizedMarkdownComponents = useMemo(() => ({
+    p: ({ children, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
+      <p {...props} className="text-xs sm:text-sm leading-relaxed">{children}</p>
+    ),
+    ul: ({ children, ...props }: React.HTMLAttributes<HTMLUListElement>) => (
+      <ul {...props} className="list-disc ml-3 sm:ml-4 my-1.5 sm:my-2 text-xs sm:text-sm">{children}</ul>
+    ),
+    ol: ({ children, ...props }: React.HTMLAttributes<HTMLOListElement>) => (
+      <ol {...props} className="list-decimal ml-3 sm:ml-4 my-1.5 sm:my-2 text-xs sm:text-sm">{children}</ol>
+    ),
+    li: ({ children, ...props }: React.HTMLAttributes<HTMLLIElement>) => (
+      <li {...props} className="mb-0.5 sm:mb-1">{children}</li>
+    ),
+    code: ({ children, ...props }: React.HTMLAttributes<HTMLElement>) => (
+      <code {...props} className="bg-muted px-1 py-0.5 rounded text-xs sm:text-sm">{children}</code>
+    ),
+    pre: ({ children, ...props }: React.HTMLAttributes<HTMLPreElement>) => (
+      <pre {...props} className="bg-muted p-2 rounded-md overflow-x-auto">
+        {children}
+      </pre>
+    ),
+  }), []);
+
+  // Memoize the send message function
+  const sendMessage = useCallback(async () => {
     if (!input.trim() || isLoading) return;
 
     const newMessages: Message[] = [
@@ -102,67 +105,87 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [input, isLoading, messages, mode, saveCurrentSession, setMessages]);
 
-  const handleNewChat = () => {
-    if (messages.length > 0 && messages.some(m => m.role === 'user')) {
-      saveCurrentSession(); // Save the current chat if it has user messages
+  // Optimize scroll behavior with useCallback
+  const scrollToLastUserMessage = useCallback(() => {
+    if (!scrollContainerRef.current || !lastUserMessageRef.current) return;
+
+    const scrollContainer = scrollContainerRef.current;
+    const lastUserMessage = lastUserMessageRef.current;
+    
+    const containerHeight = scrollContainer.clientHeight;
+    const contentHeight = scrollContainer.scrollHeight;
+    const lastUserMessageTop = lastUserMessage.getBoundingClientRect().top - scrollContainer.getBoundingClientRect().top;
+    const lastUserMessageHeight = lastUserMessage.offsetHeight;
+    
+    // Check if there's enough content to scroll (content height > container height + message height)
+    if (contentHeight > containerHeight + lastUserMessageHeight) {
+      requestAnimationFrame(() => {
+        const scrollPosition = Math.max(0, lastUserMessageTop + scrollContainer.scrollTop - 20);
+        scrollContainer.scrollTop = scrollPosition;
+      });
+    } else {
+      // For short conversations or first message, ensure message is visible
+      const minScroll = Math.max(0, lastUserMessageTop - 20);
+      scrollContainer.scrollTop = minScroll;
     }
-    setMessages([]); // Clear the chat window
-    setActiveSessionId(null); // Reset the active session
-  };
+  }, []);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  // Optimize message rendering with useMemo
+  const renderedMessages = useMemo(() => (
+    messages.map((message, index) => {
+      const isLastUserMessage = message.role === 'user' && 
+        messages.slice(index + 1).every(m => m.role !== 'user');
+
+      return (
+        <div 
+          key={index}
+          ref={isLastUserMessage ? lastUserMessageRef : undefined}
+          className={`message-container ${message.role}-message flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
+        >
+          <div
+            className={`max-w-[85%] p-3 rounded-lg ${
+              message.role === 'user'
+                ? 'bg-primary text-primary-foreground'
+                : 'bg-muted'
+            }`}
+          >
+            <ReactMarkdown components={memoizedMarkdownComponents}>
+              {message.content}
+            </ReactMarkdown>
+          </div>
+        </div>
+      );
+    })
+  ), [messages, memoizedMarkdownComponents]);
+
+  // Effect for scroll behavior
+  useEffect(() => {
+    scrollToLastUserMessage();
+  }, [messages, scrollToLastUserMessage]);
+
+  // Effect for input focus
+  useEffect(() => {
+    if (isOpen && inputRef.current) {
+      inputRef.current.focus();
+    }
+  }, [isOpen]);
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       sendMessage();
     }
-  };
+  }, [sendMessage]);
 
-  // Focus input when chat opens
-  useEffect(() => {
-    if (inputRef.current) {
-      inputRef.current.focus();
+  const handleNewChat = useCallback(() => {
+    if (messages.length > 0 && messages.some(m => m.role === 'user')) {
+      saveCurrentSession();
     }
-  }, []);
-
-  // Scroll to position last user message at top when possible
-  useEffect(() => {
-    const scrollContainer = document.querySelector('.chat-messages');
-    const messageElements = Array.from(document.querySelectorAll('.message-container'));
-    
-    if (scrollContainer && messageElements.length > 0) {
-      // Find the index of the last user message in the messages array
-      const lastUserMessageIndex = messages.map(msg => msg.role).lastIndexOf('user');
-      
-      if (lastUserMessageIndex !== -1) {
-        // Find the corresponding DOM element
-        const lastUserMessage = messageElements[lastUserMessageIndex];
-        
-        if (lastUserMessage) {
-          const containerHeight = scrollContainer.clientHeight;
-          const contentHeight = scrollContainer.scrollHeight;
-          const lastUserMessageTop = lastUserMessage.getBoundingClientRect().top - scrollContainer.getBoundingClientRect().top;
-          
-          // Only apply special scrolling if there's enough content and it's not the first message
-          if (contentHeight > containerHeight * 1.5 && lastUserMessageIndex > 0) {
-            // Add a small delay to ensure the DOM has updated
-            setTimeout(() => {
-              // Calculate scroll position to put last user message at top with some padding
-              const scrollPosition = Math.max(0, lastUserMessageTop + scrollContainer.scrollTop - 20);
-              scrollContainer.scrollTop = scrollPosition;
-            }, 0);
-          } else {
-            // If not enough content or it's the first message, scroll to bottom
-            scrollContainer.scrollTop = contentHeight;
-          }
-        }
-      } else {
-        // If no user messages, scroll to bottom
-        scrollContainer.scrollTop = scrollContainer.scrollHeight;
-      }
-    }
-  }, [messages]);
+    setMessages([]);
+    setActiveSessionId(null);
+  }, [messages, saveCurrentSession, setMessages, setActiveSessionId]);
 
   return (
     <>
@@ -273,26 +296,9 @@ export function AIChat({ isOpen, onClose }: AIChatProps) {
             
             <div className="flex-1 flex flex-col min-h-0">
               {/* Messages */}
-              <div className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch] chat-messages">
+              <div ref={scrollContainerRef} className="flex-1 overflow-y-auto overscroll-y-contain touch-pan-y [-webkit-overflow-scrolling:touch] chat-messages">
                 <div className="p-4 space-y-4">
-                  {messages.map((message, index) => (
-                    <div 
-                      key={index}
-                      className={`message-container ${message.role === 'user' ? 'user-message' : 'assistant-message'} flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-[85%] p-3 rounded-lg ${
-                          message.role === 'user'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted'
-                        }`}
-                      >
-                        <ReactMarkdown components={markdownComponents}>
-                          {message.content}
-                        </ReactMarkdown>
-                      </div>
-                    </div>
-                  ))}
+                  {renderedMessages}
                   {isLoading && (
                     <div className="flex justify-start">
                       <div className="max-w-[85%] p-3 rounded-lg bg-muted">
